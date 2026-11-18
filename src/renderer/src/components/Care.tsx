@@ -56,7 +56,7 @@ export function Care({ settings, water, onPatch, onAddWater, onResetWater, t }: 
         <div className="mt-2 flex items-center gap-2">
           <div className="h-1 flex-1 overflow-hidden rounded-full bg-ink-900/10">
             <div
-              className="h-full rounded-full bg-accent-teal transition-[width] duration-300"
+              className="h-full rounded-full bg-accent-teal transition-[width] duration-500 ease-out"
               style={{ width: `${percent}%` }}
             />
           </div>

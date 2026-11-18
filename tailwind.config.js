@@ -80,10 +80,10 @@ module.exports = {
         floaty: 'floaty 4.5s ease-in-out infinite',
         bouncey: 'bouncey 1.05s ease-in-out infinite',
         breathe: 'breathe 3.2s ease-in-out infinite',
-        rise: 'rise 0.32s ease-out both',
+        rise: 'rise 0.4s cubic-bezier(0.22,1,0.36,1) both',
         driftUp: 'driftUp 2.4s ease-out infinite',
-        pop: 'pop 0.28s ease-out both',
-        slideOver: 'slideOver 0.24s ease-out both',
+        pop: 'pop 0.34s cubic-bezier(0.22,1,0.36,1) both',
+        slideOver: 'slideOver 0.3s cubic-bezier(0.22,1,0.36,1) both',
         confetti: 'confetti 1.2s ease-out forwards'
       }
     }

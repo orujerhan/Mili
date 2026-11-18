@@ -142,7 +142,7 @@ export function NowPlaying({ media, spotifyEnabled, showLyrics, onOpenSettings, 
 
             <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-ink-900/10">
               <div
-                className="h-full rounded-full bg-accent-cyan transition-[width] duration-300 ease-linear"
+                className="h-full rounded-full bg-accent-cyan transition-[width] duration-500 ease-out"
                 style={{ width: `${percent}%` }}
               />
             </div>

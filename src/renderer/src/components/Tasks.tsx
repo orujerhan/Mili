@@ -85,7 +85,7 @@ export function Tasks({ tasks, onAdd, onToggle, onDelete, onCyclePriority, onCle
         </div>
         <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-ink-900/10">
           <div
-            className="h-full rounded-full bg-accent-cyan transition-[width] duration-300"
+            className="h-full rounded-full bg-accent-cyan transition-[width] duration-500 ease-out"
             style={{ width: `${percent}%` }}
           />
         </div>
