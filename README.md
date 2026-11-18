@@ -255,6 +255,16 @@ they are reliable in the installed build.
 
 [MIT](LICENSE) © 2026 Erhan Oruj
 
-Mascot artwork and the app are free to use, modify and share. Lyrics are provided by
-[LRCLIB](https://lrclib.net); Spotify is a trademark of Spotify AB and is not affiliated with
-this project.
+Mascot artwork and the app are free to use, modify and share.
+
+### Third-party notices
+
+- **Lyrics** are streamed at runtime from [LRCLIB](https://lrclib.net); no lyric text is bundled
+  with Mili. Lyrics themselves belong to their respective rights holders.
+- **Album artwork** comes from the Windows media session. When Windows withholds it, Mili looks
+  the cover up through the public [Deezer](https://www.deezer.com) and
+  [iTunes](https://www.apple.com/itunes) catalogues and only displays it for the track you are
+  playing. Artwork belongs to its respective rights holders.
+- **Spotify** is a trademark of Spotify AB. Mili is an independent project and is not affiliated
+  with, endorsed by or sponsored by Spotify, Deezer or Apple.
+- Mili ships no advertising, no analytics and no user accounts.
