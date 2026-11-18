@@ -1,0 +1,52 @@
+appId: com.mili.desktop
+productName: Mili
+copyright: Copyright © 2026 Erhan Oruj
+
+directories:
+  buildResources: build
+  output: dist
+
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+
+asar: true
+asarUnpack: []
+
+# Icons used by the tray and by native notifications at runtime.
+extraResources:
+  - from: assets
+    to: assets
+    filter:
+      - icon.png
+      - tray.png
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  artifactName: Mili-Setup-${version}.${ext}
+  executableName: Mili
+  requestedExecutionLevel: asInvoker
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Mili
+  deleteAppDataOnUninstall: false
+  uninstallDisplayName: Mili
+
+portable:
+  artifactName: Mili-${version}-portable.${ext}
+
+publish: null

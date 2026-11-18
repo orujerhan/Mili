@@ -1,0 +1,51 @@
+{
+  "name": "mili",
+  "version": "1.1.0",
+  "description": "Mili — a free, open-source desktop companion for Windows",
+  "main": "./out/main/index.js",
+  "author": "Erhan Oruj",
+  "license": "MIT",
+  "homepage": "https://github.com/orujerhan/Mili#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/orujerhan/Mili.git"
+  },
+  "bugs": {
+    "url": "https://github.com/orujerhan/Mili/issues"
+  },
+  "keywords": [
+    "electron",
+    "windows",
+    "pomodoro",
+    "spotify",
+    "lyrics",
+    "tray",
+    "desktop-widget"
+  ],
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit",
+    "dist": "npm run typecheck && electron-vite build && electron-builder --win --publish never",
+    "dist:dir": "npm run build && electron-builder --win --dir --publish never",
+    "assets": "node scripts/make-assets.mjs && node scripts/make-icon.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.9",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "postcss": "^8.4.49",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

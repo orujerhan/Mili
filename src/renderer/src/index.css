@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  /* Accent theme channels (RGB) — overwritten at runtime from settings. */
+  --accent-1: 8 145 178;
+  --accent-2: 47 111 148;
+  --accent-teal: 15 118 110;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: transparent;
+  color: #14161d;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+.drag {
+  -webkit-app-region: drag;
+}
+
+button,
+input,
+textarea,
+a,
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+/* Duolingo-flavoured, flat: solid fills, chunky borders, pressed-in buttons. */
+@layer components {
+  .glass {
+    @apply rounded-2xl border-2 border-[#e9eaee] bg-white shadow-[0_2px_0_rgba(20,22,29,0.04)];
+  }
+
+  .glass-tight {
+    @apply rounded-xl border-2 border-[#e9eaee] bg-white;
+  }
+
+  .icon-btn {
+    @apply inline-flex h-7 w-7 items-center justify-center rounded-xl text-ink-900/45 transition duration-150 hover:bg-ink-900/[0.06] hover:text-ink-900 active:translate-y-[1px] active:scale-[0.97];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border-2 border-[#e9eaee] bg-white px-2 py-0.5 text-[10px] font-bold leading-4 text-ink-900/55;
+  }
+
+  .seg-item {
+    @apply flex-1 rounded-xl px-2 py-1 text-[11px] font-bold text-ink-900/45 transition hover:text-ink-900/75;
+  }
+
+  .seg-item-active {
+    @apply bg-white text-ink-900 shadow-[0_1px_2px_rgba(20,22,29,0.14)];
+  }
+
+  .soft-btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-[#e9eaee] bg-white px-3 py-1.5 text-[11px] font-bold text-ink-900/70 shadow-[0_2px_0_#e9eaee] transition hover:bg-[#fafbfc] hover:text-ink-900 active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .primary-btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-accent-cyan px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.04em] text-white shadow-[0_3px_0_rgba(20,22,29,0.22)] transition hover:brightness-105 active:translate-y-[3px] active:shadow-none disabled:opacity-40;
+  }
+
+  .field {
+    @apply w-full rounded-xl border-2 border-[#e9eaee] bg-white px-3 py-2 text-xs font-semibold text-ink-900 placeholder:text-ink-900/30 outline-none transition focus:border-accent-cyan/60;
+  }
+}
+
+/* Scrollable, but without a visible scrollbar line. */
+.scroll-thin {
+  scrollbar-width: none;
+}
+
+.scroll-thin::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
