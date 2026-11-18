@@ -26,7 +26,10 @@ import { useIdle, useReminders } from './hooks/useReminders'
 import { useStats } from './hooks/useStats'
 import { useI18n } from './lib/i18n'
 import { playChime, playConfirm, playPop, playTick } from './lib/sound'
-import { formatClock, hexToChannels, makeId, shadeHex } from './lib/utils'
+import { cn, formatClock, hexToChannels, makeId, shadeHex } from './lib/utils'
+
+/** Must stay in sync with the islandClose animation duration in index.css. */
+const ISLAND_CLOSE_MS = 200
 
 const NEXT_PRIORITY: Record<Priority, Priority> = {
   low: 'normal',
@@ -46,6 +49,7 @@ export default function App() {
   const [celebrating, setCelebrating] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [phase, setPhase] = useState<'opening' | 'closing' | 'idle'>('opening')
   const [notice, setNotice] = useState<{ title: string; body: string } | null>(null)
 
   const media = useMedia()
@@ -55,6 +59,7 @@ export default function App() {
   const toastTimer = useRef<number | null>(null)
   const celebrateTimer = useRef<number | null>(null)
   const collapseTimer = useRef<number | null>(null)
+  const closeTimer = useRef<number | null>(null)
   const noticeTimer = useRef<number | null>(null)
 
   useEffect(() => {
@@ -64,6 +69,7 @@ export default function App() {
       if (toastTimer.current) window.clearTimeout(toastTimer.current)
       if (celebrateTimer.current) window.clearTimeout(celebrateTimer.current)
       if (collapseTimer.current) window.clearTimeout(collapseTimer.current)
+      if (closeTimer.current) window.clearTimeout(closeTimer.current)
       if (noticeTimer.current) window.clearTimeout(noticeTimer.current)
     }
   }, [])
@@ -75,7 +81,15 @@ export default function App() {
     root.style.setProperty('--accent-2', hexToChannels(shadeHex(settings.accent, -0.18)))
   }, [settings.accent])
 
-  useEffect(() => window.mili.onIsland((isExpanded) => setExpanded(isExpanded)), [])
+  useEffect(
+    () =>
+      window.mili.onIsland((isExpanded) => {
+        setExpanded(isExpanded)
+        // Every fresh mount unfolds out of the pill again.
+        setPhase('opening')
+      }),
+    []
+  )
 
   // The welcome flow needs the full panel, and it must not auto-collapse.
   useEffect(() => {
@@ -87,6 +101,11 @@ export default function App() {
       window.clearTimeout(collapseTimer.current)
       collapseTimer.current = null
     }
+    if (closeTimer.current) {
+      window.clearTimeout(closeTimer.current)
+      closeTimer.current = null
+      setPhase('idle')
+    }
     void window.mili.setIsland(true)
   }, [])
 
@@ -95,26 +114,42 @@ export default function App() {
       window.clearTimeout(collapseTimer.current)
       collapseTimer.current = null
     }
+    // Coming back mid-animation aborts the collapse instead of finishing it.
+    if (closeTimer.current) {
+      window.clearTimeout(closeTimer.current)
+      closeTimer.current = null
+      setPhase('idle')
+    }
   }, [])
 
+  /**
+   * Runs the fold-back animation first and only then shrinks the window, so the
+   * panel is never laid out inside a pill-sized frame (that reflow is what made
+   * collapsing look heavy).
+   */
   const collapseIsland = useCallback(() => {
+    if (onboarding) return
     if (collapseTimer.current) {
       window.clearTimeout(collapseTimer.current)
       collapseTimer.current = null
     }
-    setSettingsOpen(false)
-    void window.mili.setIsland(false)
-  }, [])
+    if (closeTimer.current) return
+    setPhase('closing')
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null
+      setSettingsOpen(false)
+      void window.mili.setIsland(false)
+    }, ISLAND_CLOSE_MS)
+  }, [onboarding])
 
   const scheduleCollapse = useCallback(() => {
     if (onboarding) return
     if (collapseTimer.current) window.clearTimeout(collapseTimer.current)
     collapseTimer.current = window.setTimeout(() => {
       collapseTimer.current = null
-      setSettingsOpen(false)
-      void window.mili.setIsland(false)
+      collapseIsland()
     }, 900)
-  }, [onboarding])
+  }, [onboarding, collapseIsland])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -250,16 +285,18 @@ export default function App() {
 
   if (!expanded) {
     return (
-      <IslandPill
-        mood={mood}
-        hours={clock.hours}
-        minutes={clock.minutes}
-        playing={media.playing}
-        artwork={media.artwork}
-        noticeTitle={notice?.title ?? ''}
-        onExpand={expandIsland}
-        t={t}
-      />
+      <div className="island-appear h-full w-full">
+        <IslandPill
+          mood={mood}
+          hours={clock.hours}
+          minutes={clock.minutes}
+          playing={media.playing}
+          artwork={media.artwork}
+          noticeTitle={notice?.title ?? ''}
+          onExpand={expandIsland}
+          t={t}
+        />
+      </div>
     )
   }
 
@@ -277,11 +314,14 @@ export default function App() {
 
   return (
     <div
-      className="h-full w-full p-2"
+      className={cn(
+        'h-full w-full p-2',
+        phase === 'closing' ? 'island-closing' : phase === 'opening' ? 'island-opening' : null
+      )}
       onMouseEnter={cancelCollapse}
       onMouseLeave={scheduleCollapse}
     >
-      <div className="relative flex h-full animate-pop flex-col overflow-hidden rounded-[26px] bg-[#f7f8fa] shadow-island">
+      <div className="relative flex h-full flex-col overflow-hidden rounded-[26px] bg-[#f7f8fa] shadow-island">
         <Header
           mood={mood}
           alwaysOnTop={settings.alwaysOnTop}

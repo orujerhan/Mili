@@ -33,7 +33,6 @@ const EXPANDED_HEIGHT = 664
 const COLLAPSED_WIDTH = 272
 const COLLAPSED_HEIGHT = 58
 const TOP_MARGIN = 8
-const ISLAND_ANIMATION_MS = 190
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -41,7 +40,6 @@ let mediaWatcher: MediaWatcher | null = null
 let statsMonitor: StatsMonitor | null = null
 let quitting = false
 let islandExpanded = false
-let boundsTimer: NodeJS.Timeout | null = null
 
 const startHidden = process.argv.includes('--hidden')
 
@@ -118,40 +116,15 @@ function islandBounds(expanded: boolean): Electron.Rectangle {
   }
 }
 
-/** Tweens the window between the pill and the full panel, anchored top-center. */
+/**
+ * The window jumps to its final size in one call and the renderer performs the
+ * visible part of the morph (the panel unfolds out of the pill's rectangle).
+ * Stepping setBounds frame by frame made Windows repaint the transparent window
+ * a dozen times per transition, which is what felt slow and glitchy.
+ */
 function animateIsland(expanded: boolean): void {
   if (!mainWindow || mainWindow.isDestroyed()) return
-  if (boundsTimer) {
-    clearInterval(boundsTimer)
-    boundsTimer = null
-  }
-
-  const from = mainWindow.getBounds()
-  const to = islandBounds(expanded)
-  const steps = Math.max(1, Math.round(ISLAND_ANIMATION_MS / 16))
-  let step = 0
-
-  boundsTimer = setInterval(() => {
-    step += 1
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      if (boundsTimer) clearInterval(boundsTimer)
-      boundsTimer = null
-      return
-    }
-    const t = Math.min(1, step / steps)
-    const eased = 1 - (1 - t) ** 3
-    mainWindow.setBounds({
-      x: Math.round(from.x + (to.x - from.x) * eased),
-      y: Math.round(from.y + (to.y - from.y) * eased),
-      width: Math.round(from.width + (to.width - from.width) * eased),
-      height: Math.round(from.height + (to.height - from.height) * eased)
-    })
-    if (step >= steps) {
-      if (boundsTimer) clearInterval(boundsTimer)
-      boundsTimer = null
-      mainWindow?.setBounds(to)
-    }
-  }, 16)
+  mainWindow.setBounds(islandBounds(expanded))
 }
 
 function setIsland(expanded: boolean): void {
@@ -444,8 +417,6 @@ if (!gotLock) {
 
   app.on('before-quit', () => {
     quitting = true
-    if (boundsTimer) clearInterval(boundsTimer)
-    boundsTimer = null
     flushStore()
     globalShortcut.unregisterAll()
     statsMonitor?.stop()
