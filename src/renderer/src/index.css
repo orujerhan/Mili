@@ -99,40 +99,26 @@ textarea {
 }
 
 /*
- * Island morph. The window itself resizes in one jump; the panel rolls open
- * from the pill's height (clipped vertically only, so text is never cut at the
- * sides) and fades, so the resize is invisible and nothing reflows.
+ * Island morph.
+ *
+ * The window still resizes in a single jump, but nothing on screen moves while
+ * it happens: the pill is drawn at a fixed 272x58 size, centred, in both the
+ * collapsed and the expanded tree, so the new window shows byte-identical
+ * pixels. The panel itself unfolds from the pill's exact rectangle with a
+ * clip-path transition, which also lets a fold reverse mid-flight when the
+ * pointer comes back. No transform/opacity is used, so text never blurs or
+ * flashes during the morph.
  */
-@keyframes islandOpen {
-  0% {
-    clip-path: inset(0px 0px 606px 0px round 26px);
-    opacity: 0;
-    transform: scale(0.99);
-  }
-  40% {
-    opacity: 1;
-  }
-  100% {
-    clip-path: inset(0px 0px 0px 0px round 26px);
-    opacity: 1;
-    transform: scale(1);
-  }
+.island-morph {
+  clip-path: inset(0px 0px 0px 0px round 26px);
+  transition: clip-path 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: clip-path;
 }
 
-@keyframes islandClose {
-  0% {
-    clip-path: inset(0px 0px 0px 0px round 26px);
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    clip-path: inset(0px 0px 606px 0px round 26px);
-    opacity: 0;
-    transform: scale(0.99);
-  }
+.island-morph.island-folded {
+  clip-path: inset(0px calc(50% - 136px) calc(100% - 52px) calc(50% - 136px) round 26px);
+  transition-duration: 210ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.55, 1);
 }
 
 @keyframes islandAppear {
@@ -144,15 +130,6 @@ textarea {
     opacity: 1;
     transform: none;
   }
-}
-
-.island-opening {
-  animation: islandOpen 240ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.island-closing {
-  animation: islandClose 190ms cubic-bezier(0.4, 0, 0.7, 1) forwards;
-  will-change: clip-path, opacity;
 }
 
 .island-appear {

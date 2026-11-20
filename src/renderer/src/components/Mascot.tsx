@@ -11,6 +11,20 @@ const MOTION: Record<MascotMood, string> = {
   happy: 'animate-pop'
 }
 
+/**
+ * The sleeping pose is drawn lying down, so on its square canvas the bunny only
+ * fills the width and reads smaller than the standing poses. Scaling the image
+ * up (it is centred and may spill out of the layout box) brings her body back
+ * to the same size as the rest.
+ */
+const SPRITE_SCALE: Record<MascotMood, number> = {
+  idle: 1,
+  vibing: 1,
+  focused: 1,
+  happy: 1,
+  sleepy: 1.16
+}
+
 interface MascotProps {
   mood: MascotMood
   size?: number
@@ -20,6 +34,7 @@ export function Mascot({ mood, size = 92 }: MascotProps) {
   const sprite = mascotSprite(mood)
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
   const showSprite = Boolean(sprite) && failedSrc !== sprite
+  const scale = SPRITE_SCALE[mood]
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -33,7 +48,11 @@ export function Mascot({ mood, size = 92 }: MascotProps) {
             alt="Mili"
             draggable={false}
             onError={() => setFailedSrc(sprite)}
-            className="h-full w-full select-none object-contain drop-shadow-[0_6px_12px_rgba(20,22,32,0.14)]"
+            style={scale === 1 ? undefined : { width: size * scale, height: size * scale }}
+            className={cn(
+              'max-w-none select-none object-contain drop-shadow-[0_6px_12px_rgba(20,22,32,0.14)]',
+              scale === 1 && 'h-full w-full'
+            )}
           />
         ) : (
           <FallbackBunny className="h-full w-full drop-shadow-[0_6px_12px_rgba(20,22,32,0.14)]" />

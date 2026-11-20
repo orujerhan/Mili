@@ -28,8 +28,11 @@ import { useI18n } from './lib/i18n'
 import { playChime, playConfirm, playPop, playTick } from './lib/sound'
 import { cn, formatClock, hexToChannels, makeId, shadeHex } from './lib/utils'
 
-/** Must stay in sync with the islandClose animation duration in index.css. */
-const ISLAND_CLOSE_MS = 200
+/** Must stay in sync with the .island-morph transitions in index.css. */
+const ISLAND_CLOSE_MS = 210
+const ISLAND_OPEN_MS = 260
+
+type IslandPhase = 'idle' | 'prep' | 'opening' | 'closing'
 
 const NEXT_PRIORITY: Record<Priority, Priority> = {
   low: 'normal',
@@ -49,7 +52,7 @@ export default function App() {
   const [celebrating, setCelebrating] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
-  const [phase, setPhase] = useState<'opening' | 'closing' | 'idle'>('opening')
+  const [phase, setPhase] = useState<IslandPhase>('idle')
   const [notice, setNotice] = useState<{ title: string; body: string } | null>(null)
 
   const media = useMedia()
@@ -61,6 +64,8 @@ export default function App() {
   const collapseTimer = useRef<number | null>(null)
   const closeTimer = useRef<number | null>(null)
   const noticeTimer = useRef<number | null>(null)
+  const wasExpanded = useRef(false)
+  const morphRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 1000)
@@ -85,11 +90,38 @@ export default function App() {
     () =>
       window.mili.onIsland((isExpanded) => {
         setExpanded(isExpanded)
-        // Every fresh mount unfolds out of the pill again.
-        setPhase('opening')
+        // 'prep' mounts the panel fully folded (invisible under the pill) so its
+        // first paint never lands in the middle of the unfold.
+        setPhase(isExpanded ? 'prep' : 'idle')
       }),
     []
   )
+
+  // The panel is committed folded first and gets one painted frame of its own
+  // before the unfold starts. Without that beat the first animation frame also
+  // carries the panel's first full paint and stalls for ~80ms, which read as a
+  // hitch right at the start of the transition.
+  useEffect(() => {
+    if (phase !== 'prep') return
+    const id = window.requestAnimationFrame(() => {
+      setPhase((current) => (current === 'prep' ? 'opening' : current))
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [phase])
+
+  // Once the unfold is done the overlay pill is gone for good, so the panel
+  // owns the window on its own until the next fold.
+  useEffect(() => {
+    if (phase !== 'opening') return
+    const id = window.setTimeout(() => {
+      setPhase((current) => (current === 'opening' ? 'idle' : current))
+    }, ISLAND_OPEN_MS)
+    return () => window.clearTimeout(id)
+  }, [phase])
+
+  useEffect(() => {
+    if (expanded) wasExpanded.current = true
+  }, [expanded])
 
   // The welcome flow needs the full panel, and it must not auto-collapse.
   useEffect(() => {
@@ -104,22 +136,23 @@ export default function App() {
     if (closeTimer.current) {
       window.clearTimeout(closeTimer.current)
       closeTimer.current = null
-      setPhase('idle')
     }
-    void window.mili.setIsland(true)
-  }, [])
+    // Still expanded (fold was interrupted): just let the clip transition back.
+    if (expanded) setPhase('opening')
+    else void window.mili.setIsland(true)
+  }, [expanded])
 
   const cancelCollapse = useCallback(() => {
     if (collapseTimer.current) {
       window.clearTimeout(collapseTimer.current)
       collapseTimer.current = null
     }
-    // Coming back mid-animation aborts the collapse instead of finishing it.
     if (closeTimer.current) {
       window.clearTimeout(closeTimer.current)
       closeTimer.current = null
-      setPhase('idle')
     }
+    // Coming back mid-fold reverses the transition instead of finishing it.
+    setPhase((current) => (current === 'closing' ? 'opening' : current))
   }, [])
 
   /**
@@ -138,6 +171,9 @@ export default function App() {
     closeTimer.current = window.setTimeout(() => {
       closeTimer.current = null
       setSettingsOpen(false)
+      // The panel is fully folded behind the pill by now, so shrinking the
+      // window changes no visible pixel. Phase stays 'closing' until the main
+      // process confirms the smaller bounds and mounts the real pill.
       void window.mili.setIsland(false)
     }, ISLAND_CLOSE_MS)
   }, [onboarding])
@@ -283,19 +319,30 @@ export default function App() {
 
   const clock = formatClock(now, settings.clock24h)
 
+  const pill = (
+    <IslandPill
+      mood={mood}
+      hours={clock.hours}
+      minutes={clock.minutes}
+      playing={media.playing}
+      artwork={media.artwork}
+      noticeTitle={notice?.title ?? ''}
+      onExpand={expandIsland}
+      t={t}
+    />
+  )
+
   if (!expanded) {
     return (
-      <div className="island-appear h-full w-full">
-        <IslandPill
-          mood={mood}
-          hours={clock.hours}
-          minutes={clock.minutes}
-          playing={media.playing}
-          artwork={media.artwork}
-          noticeTitle={notice?.title ?? ''}
-          onExpand={expandIsland}
-          t={t}
-        />
+      // Fixed-size and centred on both axes it shares with the expanded window,
+      // so growing or shrinking the window never moves or stretches the pill.
+      <div
+        className={cn(
+          'flex h-full w-full items-start justify-center',
+          wasExpanded.current ? null : 'island-appear'
+        )}
+      >
+        <div className="h-[58px] w-[272px]">{pill}</div>
       </div>
     )
   }
@@ -312,104 +359,124 @@ export default function App() {
     )
   }
 
+  const folded = phase === 'prep' || phase === 'closing'
+  const showPill = phase !== 'idle'
+
   return (
-    <div
-      className={cn(
-        'h-full w-full p-2',
-        phase === 'closing' ? 'island-closing' : phase === 'opening' ? 'island-opening' : null
-      )}
-      onMouseEnter={cancelCollapse}
-      onMouseLeave={scheduleCollapse}
-    >
-      <div className="relative flex h-full flex-col overflow-hidden rounded-[26px] bg-[#f7f8fa] shadow-island">
-        <Header
-          mood={mood}
-          alwaysOnTop={settings.alwaysOnTop}
-          onTogglePin={() => void patchSettings({ alwaysOnTop: !settings.alwaysOnTop })}
-          onOpenSettings={() => setSettingsOpen(true)}
-          onCollapse={collapseIsland}
-          onHide={() => void window.mili.windowAction('hide')}
-          t={t}
-        />
+    <div className="relative h-full w-full">
+      <div
+        ref={morphRef}
+        className={cn('island-morph h-full w-full p-2', folded && 'island-folded')}
+        onMouseEnter={cancelCollapse}
+        onMouseLeave={scheduleCollapse}
+      >
+        <div className="relative flex h-full flex-col overflow-hidden rounded-[26px] bg-[#f7f8fa] shadow-island">
+          <Header
+            mood={mood}
+            alwaysOnTop={settings.alwaysOnTop}
+            onTogglePin={() => void patchSettings({ alwaysOnTop: !settings.alwaysOnTop })}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onCollapse={collapseIsland}
+            onHide={() => void window.mili.windowAction('hide')}
+            t={t}
+          />
 
-        <Hero
-          mood={mood}
-          now={now}
-          clock24h={settings.clock24h}
-          locale={locale}
-          name={settings.profileName}
-          t={t}
-        />
+          <Hero
+            mood={mood}
+            now={now}
+            clock24h={settings.clock24h}
+            locale={locale}
+            name={settings.profileName}
+            t={t}
+          />
 
-        <div className="px-3">
-          <Tabs active={tab} onChange={setTab} t={t} />
-        </div>
+          <div className="px-3">
+            <Tabs active={tab} onChange={setTab} t={t} />
+          </div>
 
-        <main className="scroll-thin mt-2 flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-2">
-          {notice && <Notice title={notice.title} body={notice.body} onClose={dismissNotice} />}
-          {tab === 'home' && (
-            <div className="flex min-h-0 flex-1 flex-col">
-              <NowPlaying
-                media={media}
-                spotifyEnabled={settings.spotifyEnabled}
-                showLyrics={settings.showLyrics}
-                onOpenSettings={() => setSettingsOpen(true)}
+          <main className="scroll-thin mt-2 flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-2">
+            {notice && <Notice title={notice.title} body={notice.body} onClose={dismissNotice} />}
+            {tab === 'home' && (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <NowPlaying
+                  media={media}
+                  spotifyEnabled={settings.spotifyEnabled}
+                  showLyrics={settings.showLyrics}
+                  onOpenSettings={() => setSettingsOpen(true)}
+                  t={t}
+                />
+              </div>
+            )}
+            {tab === 'focus' && <Pomodoro controller={pomodoro} settings={settings} t={t} />}
+            {tab === 'tasks' && (
+              <Tasks
+                tasks={tasks}
+                onAdd={addTask}
+                onToggle={toggleTask}
+                onDelete={(id) => setTasks(tasks.filter((task) => task.id !== id))}
+                onCyclePriority={cyclePriority}
+                onClearDone={() => setTasks(tasks.filter((task) => !task.done))}
                 t={t}
               />
+            )}
+            {tab === 'notes' && <Notes value={data.note} onChange={setNote} t={t} />}
+            {tab === 'care' && (
+              <Care
+                settings={settings}
+                water={water}
+                onPatch={(patch) => void patchSettings(patch)}
+                onAddWater={addWater}
+                onResetWater={() => setWater({ date: today, count: 0 })}
+                t={t}
+              />
+            )}
+          </main>
+
+          <Footer stats={stats} water={water} goal={settings.waterGoal} onAddWater={addWater} t={t} />
+
+          {toast && (
+            <div className="pointer-events-none absolute bottom-12 left-1/2 z-20 -translate-x-1/2 animate-pop rounded-full border border-ink-900/10 bg-white/95 px-3 py-1 text-[10px] text-ink-900/80 shadow-island">
+              {toast}
             </div>
           )}
-          {tab === 'focus' && <Pomodoro controller={pomodoro} settings={settings} t={t} />}
-          {tab === 'tasks' && (
-            <Tasks
-              tasks={tasks}
-              onAdd={addTask}
-              onToggle={toggleTask}
-              onDelete={(id) => setTasks(tasks.filter((task) => task.id !== id))}
-              onCyclePriority={cyclePriority}
-              onClearDone={() => setTasks(tasks.filter((task) => !task.done))}
-              t={t}
-            />
-          )}
-          {tab === 'notes' && <Notes value={data.note} onChange={setNote} t={t} />}
-          {tab === 'care' && (
-            <Care
+
+          {settingsOpen && (
+            <SettingsPanel
               settings={settings}
-              water={water}
               onPatch={(patch) => void patchSettings(patch)}
-              onAddWater={addWater}
-              onResetWater={() => setWater({ date: today, count: 0 })}
+              onClose={() => setSettingsOpen(false)}
               t={t}
             />
           )}
-        </main>
 
-        <Footer stats={stats} water={water} goal={settings.waterGoal} onAddWater={addWater} t={t} />
-
-        {toast && (
-          <div className="pointer-events-none absolute bottom-12 left-1/2 z-20 -translate-x-1/2 animate-pop rounded-full border border-ink-900/10 bg-white/95 px-3 py-1 text-[10px] text-ink-900/80 shadow-island">
-            {toast}
-          </div>
-        )}
-
-        {settingsOpen && (
-          <SettingsPanel
-            settings={settings}
-            onPatch={(patch) => void patchSettings(patch)}
-            onClose={() => setSettingsOpen(false)}
-            t={t}
-          />
-        )}
-
-        {onboarding && (
-          <Onboarding
-            initialName={settings.profileName}
-            settings={settings}
-            onPatch={(patch) => void patchSettings(patch)}
-            onFinish={(name) => void patchSettings({ profileName: name, hasOnboarded: true })}
-            t={t}
-          />
-        )}
+          {onboarding && (
+            <Onboarding
+              initialName={settings.profileName}
+              settings={settings}
+              onPatch={(patch) => void patchSettings(patch)}
+              onFinish={(name) => void patchSettings({ profileName: name, hasOnboarded: true })}
+              t={t}
+            />
+          )}
+        </div>
       </div>
+
+      {/*
+       * The same pill, drawn over the folded panel: it holds the exact pixels
+       * the window had before it grew, then hands over to the unfolding panel
+       * (and back again while folding), so neither resize ever shows a gap.
+       */}
+      {showPill && (
+        <div
+          className={cn(
+            'pointer-events-none absolute top-0 z-30 h-[58px] w-[272px] transition-opacity',
+            phase === 'opening' ? 'opacity-0 duration-150' : 'opacity-100 delay-75 duration-150'
+          )}
+          style={{ left: 'calc(50% - 136px)' }}
+        >
+          {pill}
+        </div>
+      )}
     </div>
   )
 }
