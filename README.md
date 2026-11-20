@@ -113,9 +113,9 @@ npm run dev
 
 ```bash
 npm run dist
-# → dist/Mili-Setup-1.1.7.exe
-# → dist/Mili-1.1.7-portable.exe
-# → dist/latest.yml, dist/Mili-Setup-1.1.7.exe.blockmap (read by electron-updater)
+# → dist/Mili-Setup-1.1.8.exe
+# → dist/Mili-1.1.8-portable.exe
+# → dist/latest.yml, dist/Mili-Setup-1.1.8.exe.blockmap (read by electron-updater)
 ```
 
 The installer is a standalone NSIS `.exe` (per-user install, optional custom directory,
@@ -130,8 +130,8 @@ self-contained `.exe` for people who do not want to install anything.
 installer to a GitHub Release whenever a version tag is pushed:
 
 ```bash
-git tag v1.1.7
-git push origin v1.1.7
+git tag v1.1.8
+git push origin v1.1.8
 ```
 
 The release page is written by the workflow from `.github/release-notes/<version>.md`: the first
@@ -147,7 +147,7 @@ The workflow also runs on manual dispatch (installer uploaded as a build artifac
 Link the download page straight at:
 
 ```
-https://github.com/orujerhan/Mili/releases/latest/download/Mili-Setup-1.1.7.exe
+https://github.com/orujerhan/Mili/releases/latest/download/Mili-Setup-1.1.8.exe
 ```
 
 Keep `version` in `package.json` in sync with the tag.

@@ -62,7 +62,8 @@ jobs:
           # First line is the release title, everything after it is the body.
           head -n 1 "$file" | sed 's/^#[[:space:]]*//' > "$RUNNER_TEMP/mili-release-name.txt"
           echo "name=$(cat "$RUNNER_TEMP/mili-release-name.txt")" >> "$GITHUB_OUTPUT"
-          tail -n +2 "$file" > "$RUNNER_TEMP/mili-release-body.md"
+          # Drop the title line and any blank lines that follow it.
+          tail -n +2 "$file" | sed '/./,$!d' > "$RUNNER_TEMP/mili-release-body.md"
 
       - name: Attach installer to release (notes from repository)
         if: startsWith(github.ref, 'refs/tags/v') && steps.notes.outputs.found == 'true'

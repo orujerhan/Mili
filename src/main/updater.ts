@@ -84,6 +84,12 @@ export function startUpdater(send: Listener): void {
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.allowPrerelease = false
 
+  // Allow pointing the updater at a local mirror during development/testing.
+  const mirror = process.env['MILI_UPDATE_URL']
+  if (mirror) {
+    autoUpdater.setFeedURL({ provider: 'generic', url: mirror })
+  }
+
   autoUpdater.on('checking-for-update', () => publish({ status: 'checking', error: '' }))
 
   autoUpdater.on('update-available', (info) =>

@@ -425,6 +425,14 @@ if (!gotLock) {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('update:state', state)
       }
+      // The tray icon is the only thing visible while the island is tucked away, so the
+      // download progress belongs in its tooltip.
+      if (tray && !tray.isDestroyed()) {
+        if (state.status === 'downloading') tray.setToolTip(`Mili — downloading update ${state.percent}%`)
+        else if (state.status === 'ready') tray.setToolTip(`Mili — update ${state.version} ready`)
+        else if (state.status === 'checking') tray.setToolTip('Mili — checking for updates')
+        else tray.setToolTip('Mili')
+      }
       if (state.status !== 'ready') return
       if (!getData().settings.notifications || !Notification.isSupported()) return
       const ru = getData().settings.language === 'ru'
