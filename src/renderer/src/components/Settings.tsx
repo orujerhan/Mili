@@ -1,5 +1,6 @@
 import { version } from '../../../../package.json'
 import type { Language, Settings } from '@shared/types'
+import { useUpdate } from '../hooks/useUpdate'
 import type { TFunction } from '../lib/i18n'
 import { ACCENT_SWATCHES } from '../lib/theme'
 import { cn } from '../lib/utils'
@@ -15,6 +16,38 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ settings, onPatch, onClose, t }: SettingsPanelProps) {
   const { pomodoro, reminders } = settings
+  const { update, check, install, openReleases } = useUpdate()
+
+  const updateHint =
+    update.status === 'unsupported'
+      ? t(update.reason === 'portable' ? 'settings.updatePortable' : 'settings.updateDev')
+      : update.status === 'checking'
+        ? t('settings.updateChecking')
+        : update.status === 'downloading'
+          ? t('settings.updateDownloading', { percent: update.percent })
+          : update.status === 'ready'
+            ? t('settings.updateReady', { version: update.version })
+            : update.status === 'current'
+              ? t('settings.updateCurrent')
+              : update.status === 'error'
+                ? t('settings.updateError')
+                : t('settings.updateHint')
+
+  const updateButton =
+    update.status === 'ready' ? (
+      <button type="button" onClick={install} className="soft-btn h-6 rounded-lg px-2 text-[10px]">
+        {t('settings.updateRestart')}
+      </button>
+    ) : (
+      <button
+        type="button"
+        onClick={() => (update.status === 'unsupported' ? openReleases() : check())}
+        disabled={update.status === 'checking' || update.status === 'downloading'}
+        className="soft-btn h-6 rounded-lg px-2 text-[10px] disabled:opacity-50"
+      >
+        {update.status === 'unsupported' ? t('settings.updateOpen') : t('settings.updateCheck')}
+      </button>
+    )
 
   return (
     <div className="absolute inset-0 z-30 flex animate-slideOver flex-col bg-white">
@@ -213,6 +246,9 @@ export function SettingsPanel({ settings, onPatch, onClose, t }: SettingsPanelPr
         </Section>
 
         <Section title={t('settings.about')}>
+          <Row title={t('settings.updates')} hint={updateHint}>
+            {updateButton}
+          </Row>
           <Row title={`Mili · ${t('settings.version')}`}>
             <span className="num text-[10px] font-bold text-ink-900/45">v{version}</span>
           </Row>

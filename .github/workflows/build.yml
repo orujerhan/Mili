@@ -43,6 +43,8 @@ jobs:
           path: |
             dist/Mili-Setup-*.exe
             dist/Mili-*-portable.exe
+            dist/*.exe.blockmap
+            dist/latest.yml
           if-no-files-found: error
 
       - name: Attach installer to release
@@ -52,5 +54,7 @@ jobs:
           files: |
             dist/Mili-Setup-*.exe
             dist/Mili-*-portable.exe
+            dist/*.exe.blockmap
+            dist/latest.yml
           generate_release_notes: true
           fail_on_unmatched_files: true

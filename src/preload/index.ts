@@ -10,6 +10,7 @@ import type {
   Settings,
   SystemStats,
   Task,
+  UpdateState,
   WaterState
 } from '@shared/types'
 
@@ -46,7 +47,11 @@ const bridge: MiliBridge = {
   onSettings: (listener: (settings: Settings) => void) => subscribe('settings:update', listener),
   setIsland: (expanded: boolean) =>
     ipcRenderer.invoke('island:set', expanded) as Promise<void>,
-  onIsland: (listener: (expanded: boolean) => void) => subscribe('island:update', listener)
+  onIsland: (listener: (expanded: boolean) => void) => subscribe('island:update', listener),
+  getUpdateState: () => ipcRenderer.invoke('updater:get') as Promise<UpdateState>,
+  checkForUpdates: () => ipcRenderer.invoke('updater:check') as Promise<UpdateState>,
+  installUpdate: () => ipcRenderer.invoke('updater:install') as Promise<void>,
+  onUpdate: (listener: (state: UpdateState) => void) => subscribe('update:state', listener)
 }
 
 contextBridge.exposeInMainWorld('mili', bridge)

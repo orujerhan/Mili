@@ -49,4 +49,8 @@ nsis:
 portable:
   artifactName: Mili-${version}-portable.${ext}
 
-publish: null
+# Read by electron-updater at runtime; also makes electron-builder emit latest.yml.
+publish:
+  provider: github
+  owner: orujerhan
+  repo: Mili

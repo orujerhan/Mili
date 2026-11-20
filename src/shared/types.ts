@@ -121,6 +121,27 @@ export interface NotifyPayload {
   silent?: boolean
 }
 
+export type UpdateStatus =
+  | 'idle'
+  | 'checking'
+  | 'downloading'
+  | 'ready'
+  | 'current'
+  | 'error'
+  | 'unsupported'
+
+/** Snapshot of the self-update pipeline, pushed from the main process. */
+export interface UpdateState {
+  status: UpdateStatus
+  /** version being downloaded or waiting to install */
+  version: string
+  /** 0-100 while downloading */
+  percent: number
+  /** why updates are unavailable: 'dev' or 'portable' */
+  reason: string
+  error: string
+}
+
 export interface MiliBridge {
   platform: string
   getState: () => Promise<AppData>
@@ -145,6 +166,10 @@ export interface MiliBridge {
   onSettings: (listener: (settings: Settings) => void) => () => void
   setIsland: (expanded: boolean) => Promise<void>
   onIsland: (listener: (expanded: boolean) => void) => () => void
+  getUpdateState: () => Promise<UpdateState>
+  checkForUpdates: () => Promise<UpdateState>
+  installUpdate: () => Promise<void>
+  onUpdate: (listener: (state: UpdateState) => void) => () => void
 }
 
 export const DEFAULT_SETTINGS: Settings = {

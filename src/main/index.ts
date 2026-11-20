@@ -15,6 +15,7 @@ import type { MediaCommand, MediaState, NotifyPayload, Settings } from '@shared/
 import { fetchLyrics } from './lyrics'
 import { MediaWatcher, emptyMediaState } from './media'
 import { StatsMonitor } from './stats'
+import { checkForUpdates, getUpdateState, installUpdate, startUpdater } from './updater'
 import {
   flushStore,
   getData,
@@ -339,6 +340,12 @@ function registerIpc(): void {
     }
   })
 
+  ipcMain.handle('updater:get', () => getUpdateState())
+
+  ipcMain.handle('updater:check', () => checkForUpdates())
+
+  ipcMain.handle('updater:install', () => installUpdate())
+
   ipcMain.handle('app:set-launch-at-login', (_event, enabled: boolean) => {
     patchSettings({ launchAtLogin: Boolean(enabled) })
     applyLoginItem(Boolean(enabled))
@@ -402,6 +409,26 @@ if (!gotLock) {
     statsMonitor.start()
 
     if (getData().settings.spotifyEnabled) startMediaWatcher()
+
+    startUpdater((state) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update:state', state)
+      }
+      if (state.status !== 'ready') return
+      if (!getData().settings.notifications || !Notification.isSupported()) return
+      const ru = getData().settings.language === 'ru'
+      const notification = new Notification({
+        title: ru ? `Обновление Mili ${state.version} готово` : `Mili ${state.version} is ready`,
+        body: ru ? 'Перезапусти Mili, чтобы установить.' : 'Restart Mili to finish the update.',
+        silent: true,
+        icon: loadIcon('icon.png')
+      })
+      notification.on('click', () => {
+        mainWindow?.show()
+        mainWindow?.focus()
+      })
+      notification.show()
+    })
   })
 
   app.on('activate', () => {

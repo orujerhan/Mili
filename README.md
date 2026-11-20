@@ -73,6 +73,11 @@ clear-completed and local persistence.
 
 **System** — subtle CPU / RAM pills in the footer, sampled from `node:os` (no native modules).
 
+**Self-updates** — an installed build asks GitHub for the next version on its own, downloads the
+installer in the background and installs it on the next restart. **Settings → Updates** shows the
+state and can start a check by hand; there is nothing to re-download by hand. A portable copy
+cannot replace itself, so it says so and links to the release page instead.
+
 **Theming** — the white surface stays, but active tabs, toggles and highlights follow a single
 `settings.accent` hex colour (editable in **Settings → Appearance**).
 
@@ -108,8 +113,9 @@ npm run dev
 
 ```bash
 npm run dist
-# → dist/Mili-Setup-1.1.4.exe
-# → dist/Mili-1.1.4-portable.exe
+# → dist/Mili-Setup-1.1.5.exe
+# → dist/Mili-1.1.5-portable.exe
+# → dist/latest.yml, dist/Mili-Setup-1.1.5.exe.blockmap (read by electron-updater)
 ```
 
 The installer is a standalone NSIS `.exe` (per-user install, optional custom directory,
@@ -124,15 +130,20 @@ self-contained `.exe` for people who do not want to install anything.
 installer to a GitHub Release whenever a version tag is pushed:
 
 ```bash
-git tag v1.1.4
-git push origin v1.1.4
+git tag v1.1.5
+git push origin v1.1.5
 ```
+
+Alongside the two `.exe` files each release carries `latest.yml` and the installer's
+`.exe.blockmap`. Those two are what **electron-updater** inside an installed copy reads to learn a
+new version exists and to download only the changed bytes — keep them attached to the release, or
+installed copies stop updating.
 
 The workflow also runs on manual dispatch (installer uploaded as a build artifact only).
 Link the download page straight at:
 
 ```
-https://github.com/orujerhan/Mili/releases/latest/download/Mili-Setup-1.1.4.exe
+https://github.com/orujerhan/Mili/releases/latest/download/Mili-Setup-1.1.5.exe
 ```
 
 Keep `version` in `package.json` in sync with the tag.
