@@ -113,9 +113,9 @@ npm run dev
 
 ```bash
 npm run dist
-# → dist/Mili-Setup-1.1.6.exe
-# → dist/Mili-1.1.6-portable.exe
-# → dist/latest.yml, dist/Mili-Setup-1.1.6.exe.blockmap (read by electron-updater)
+# → dist/Mili-Setup-1.1.7.exe
+# → dist/Mili-1.1.7-portable.exe
+# → dist/latest.yml, dist/Mili-Setup-1.1.7.exe.blockmap (read by electron-updater)
 ```
 
 The installer is a standalone NSIS `.exe` (per-user install, optional custom directory,
@@ -130,9 +130,13 @@ self-contained `.exe` for people who do not want to install anything.
 installer to a GitHub Release whenever a version tag is pushed:
 
 ```bash
-git tag v1.1.6
-git push origin v1.1.6
+git tag v1.1.7
+git push origin v1.1.7
 ```
+
+The release page is written by the workflow from `.github/release-notes/<version>.md`: the first
+line becomes the release title and the rest the body, so the notes ship with the code. A tag
+without a matching file falls back to GitHub's generated changelog.
 
 Alongside the two `.exe` files each release carries `latest.yml` and the installer's
 `.exe.blockmap`. Those two are what **electron-updater** inside an installed copy reads to learn a
@@ -143,7 +147,7 @@ The workflow also runs on manual dispatch (installer uploaded as a build artifac
 Link the download page straight at:
 
 ```
-https://github.com/orujerhan/Mili/releases/latest/download/Mili-Setup-1.1.6.exe
+https://github.com/orujerhan/Mili/releases/latest/download/Mili-Setup-1.1.7.exe
 ```
 
 Keep `version` in `package.json` in sync with the tag.

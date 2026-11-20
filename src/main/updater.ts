@@ -1,5 +1,8 @@
 import { app } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import { existsSync, readFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import type { UpdateState } from '@shared/types'
 
 type Listener = (state: UpdateState) => void
@@ -29,6 +32,34 @@ function blockedReason(): string {
   if (!app.isPackaged) return 'dev'
   if (process.env.PORTABLE_EXECUTABLE_DIR || process.env.PORTABLE_EXECUTABLE_FILE) return 'portable'
   return ''
+}
+
+/**
+ * electron-updater patches an update by diffing it against the installer it downloaded last time,
+ * which it keeps as `<cache>/<updaterCacheDirName>/installer.exe`. That copy is gone after an
+ * install — including every install done by hand — and the library still attempts the differential
+ * pass: it streams the whole new installer, fails the checksum and downloads the file again. The
+ * user sees the progress bar run to 100%, jump back to 1% and 80 MB arrive twice.
+ */
+function hasCachedInstaller(): boolean {
+  const base =
+    process.platform === 'win32'
+      ? process.env['LOCALAPPDATA'] || join(homedir(), 'AppData', 'Local')
+      : process.platform === 'darwin'
+        ? join(homedir(), 'Library', 'Caches')
+        : process.env['XDG_CACHE_HOME'] || join(homedir(), '.cache')
+
+  // Same directory name electron-updater reads from app-update.yml.
+  let dirName = app.getName()
+  try {
+    const config = readFileSync(join(process.resourcesPath, 'app-update.yml'), 'utf8')
+    const match = /^updaterCacheDirName:\s*(.+)$/m.exec(config)
+    if (match?.[1]) dirName = match[1].trim()
+  } catch {
+    // Development build without app-update.yml: the app name is the fallback.
+  }
+
+  return existsSync(join(base, dirName, 'installer.exe'))
 }
 
 export function getUpdateState(): UpdateState {
@@ -87,6 +118,10 @@ export async function checkForUpdates(): Promise<UpdateState> {
   if (before === 'checking' || before === 'downloading' || before === 'ready') {
     return state
   }
+
+  // Only ask for a differential download when there really is an old installer to diff against;
+  // otherwise the library downloads everything twice.
+  autoUpdater.disableDifferentialDownload = !hasCachedInstaller()
 
   publish({ status: 'checking', error: '' })
   try {
