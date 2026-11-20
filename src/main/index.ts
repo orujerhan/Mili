@@ -248,6 +248,17 @@ function rebuildTray(): void {
     },
     { type: 'separator' },
     {
+      label: 'Check for updates',
+      click: () => {
+        void checkForUpdates()
+      }
+    },
+    {
+      label: `Mili ${app.getVersion()}`,
+      enabled: false
+    },
+    { type: 'separator' },
+    {
       label: 'Quit Mili',
       click: () => {
         quitting = true

@@ -113,9 +113,9 @@ npm run dev
 
 ```bash
 npm run dist
-# → dist/Mili-Setup-1.1.5.exe
-# → dist/Mili-1.1.5-portable.exe
-# → dist/latest.yml, dist/Mili-Setup-1.1.5.exe.blockmap (read by electron-updater)
+# → dist/Mili-Setup-1.1.6.exe
+# → dist/Mili-1.1.6-portable.exe
+# → dist/latest.yml, dist/Mili-Setup-1.1.6.exe.blockmap (read by electron-updater)
 ```
 
 The installer is a standalone NSIS `.exe` (per-user install, optional custom directory,
@@ -130,8 +130,8 @@ self-contained `.exe` for people who do not want to install anything.
 installer to a GitHub Release whenever a version tag is pushed:
 
 ```bash
-git tag v1.1.5
-git push origin v1.1.5
+git tag v1.1.6
+git push origin v1.1.6
 ```
 
 Alongside the two `.exe` files each release carries `latest.yml` and the installer's
@@ -143,7 +143,7 @@ The workflow also runs on manual dispatch (installer uploaded as a build artifac
 Link the download page straight at:
 
 ```
-https://github.com/orujerhan/Mili/releases/latest/download/Mili-Setup-1.1.5.exe
+https://github.com/orujerhan/Mili/releases/latest/download/Mili-Setup-1.1.6.exe
 ```
 
 Keep `version` in `package.json` in sync with the tag.
@@ -237,7 +237,8 @@ stay on your machine.
 
 - `Alt + M` — show / hide Mili (global, works from any app)
 - `Esc` — close the settings panel
-- Tray icon — click to toggle, right-click for *Always on top*, *Launch at startup* and *Quit*
+- Tray icon — click to toggle, right-click for *Always on top*, *Launch at startup*, *Check for updates*
+  (with the running version shown underneath) and *Quit*
 
 Closing the window hides it to the tray; use **Quit Mili** from the tray menu to exit.
 
